@@ -1048,7 +1048,7 @@ static VOID DrawMainMenuEntry(REFIT_MENU_ENTRY *Entry, BOOLEAN selected, UINTN X
    EG_IMAGE *Background;
 
    // if using pointer, don't draw selection image when not hovering
-   if (selected && DrawSelection) {
+   if (selected) {
       Background = egCropImage(GlobalConfig.ScreenBackground, XPos, YPos,
                                SelectionImages[Entry->Row]->Width, SelectionImages[Entry->Row]->Height);
       egComposeImage(Background, SelectionImages[Entry->Row], 0, 0);
