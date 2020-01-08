@@ -320,6 +320,7 @@ typedef struct {
    BOOLEAN          DeepLegacyScan;
    BOOLEAN          EnableAndLockVMX;
    BOOLEAN          FoldLinuxKernels;
+   BOOLEAN          SortLinuxKernelsByName;
    BOOLEAN          EnableMouse;
    BOOLEAN          EnableTouch;
    BOOLEAN          HiddenTags;
