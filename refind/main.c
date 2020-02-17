@@ -449,6 +449,10 @@ EFI_STATUS StartEFIImage(IN REFIT_VOLUME *Volume,
 
     // re-open file handles
     ReinitRefitLib();
+    if (!IsDriver) {
+        InitScreen();
+        SetupScreen();
+    }
 
 bailout_unload:
     // unload the image, we don't care if it works or not...
@@ -711,8 +715,11 @@ LOADER_ENTRY *InitializeLoaderEntry(IN LOADER_ENTRY *Entry) {
 } // LOADER_ENTRY *InitializeLoaderEntry()
 
 // Adds InitrdPath to Options, but only if Options doesn't already include an
-// initrd= line. Done to enable overriding the default initrd selection in a
-// refind_linux.conf file's options list.
+// initrd= line or a `%v` variable. Done to enable overriding the default initrd
+// selection in a refind_linux.conf file's options list.
+// If a `%v` substring/variable is found in Options, it is replaced with the
+// initrd version string. This is available to allow for more complex customization
+// of initrd options.
 // Returns a pointer to a new string. The calling function is responsible for
 // freeing its memory.
 static CHAR16 *AddInitrdToOptions(CHAR16 *Options, CHAR16 *InitrdPath) {
@@ -720,9 +727,17 @@ static CHAR16 *AddInitrdToOptions(CHAR16 *Options, CHAR16 *InitrdPath) {
 
     if (Options != NULL)
         NewOptions = StrDuplicate(Options);
-    if ((InitrdPath != NULL) && !StriSubCmp(L"initrd=", Options)) {
-        MergeStrings(&NewOptions, L"initrd=", L' ');
-        MergeStrings(&NewOptions, InitrdPath, 0);
+    
+    if (InitrdPath != NULL) {
+        if (StriSubCmp(L"%v", Options)) {
+            CHAR16 *InitrdVersion = FindNumbers(InitrdPath);
+            ReplaceSubstring(&NewOptions, L"%v", InitrdVersion);
+
+            MyFreePool(InitrdVersion);
+        } else if (!StriSubCmp(L"initrd=", Options)) {
+            MergeStrings(&NewOptions, L"initrd=", L' ');
+            MergeStrings(&NewOptions, InitrdPath, 0);
+        }
     }
     return NewOptions;
 } // CHAR16 *AddInitrdToOptions()
@@ -2072,15 +2087,19 @@ static VOID ScanForTools(VOID) {
 } // static VOID ScanForTools
 
 // Rescan for boot loaders
-VOID RescanAll(BOOLEAN DisplayMessage) {
+VOID RescanAll(BOOLEAN DisplayMessage, BOOLEAN Reconnect) {
     FreeList((VOID ***) &(MainMenu.Entries), &MainMenu.EntryCount);
     MainMenu.Entries = NULL;
     MainMenu.EntryCount = 0;
-    ConnectAllDriversToAllControllers();
-    ScanVolumes();
+    // ConnectAllDriversToAllControllers() can cause system hangs with some
+    // buggy filesystem drivers, so do it only if necessary....
+    if (Reconnect) {
+        ConnectAllDriversToAllControllers();
+        ScanVolumes();
+    }
     ReadConfig(GlobalConfig.ConfigFilename);
     SetVolumeIcons();
-    ScanForBootloaders(TRUE);
+    ScanForBootloaders(DisplayMessage);
     ScanForTools();
 } // VOID RescanAll()
 
@@ -2256,7 +2275,7 @@ efi_main (EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
           egDisplayMessage(L"Pausing before disk scan; please wait....", &BGColor, CENTER);
        for (i = 0; i < GlobalConfig.ScanDelay; i++)
           refit_call1_wrapper(BS->Stall, 1000000);
-       RescanAll(GlobalConfig.ScanDelay > 1);
+       RescanAll(GlobalConfig.ScanDelay > 1, TRUE);
        BltClearScreen(TRUE);
     } // if
 
@@ -2271,7 +2290,7 @@ efi_main (EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
         // The Escape key triggers a re-scan operation....
         if (MenuExit == MENU_EXIT_ESCAPE) {
             MenuExit = 0;
-            RescanAll(TRUE);
+            RescanAll(TRUE, TRUE);
             continue;
         }
 
