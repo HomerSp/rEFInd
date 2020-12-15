@@ -70,22 +70,40 @@ BOOLEAN MyStriCmp(IN CONST CHAR16 *FirstString, IN CONST CHAR16 *SecondString) {
     }
 } // BOOLEAN MyStriCmp()
 
-// Performs a case-insensitive string comparison. This function is necesary
-// because some EFIs have buggy StriCmp() functions that actually perform
-// case-sensitive comparisons.
-// Returns the difference between the strings, similar to Cs strcmp.
-INT16 MyStriCmpDiff(IN CONST CHAR16 *FirstString, IN CONST CHAR16 *SecondString) {
+// Performs a version string comparison.
+// Returns the difference between the versions.
+INT16 MyStriCmpVersion(IN CONST CHAR16 *FirstString, IN CONST CHAR16 *SecondString) {
+    UINTN FirstVer = 0, SecondVer = 0;
     if (FirstString && SecondString) {
-        while ((*FirstString != L'\0') && ((*FirstString & ~0x20) == (*SecondString & ~0x20))) {
+        while (FirstVer == SecondVer) {
+            while (*FirstString != L'\0' && (*FirstString < L'0' || *FirstString > L'9')) {
                 FirstString++;
+            }
+
+            while (*SecondString != L'\0' && (*SecondString < L'0' || *SecondString > L'9')) {
                 SecondString++;
+            }
+
+            if (*FirstString == L'\0' || *SecondString == L'\0') {
+                break;
+            }
+
+            FirstVer = Atoi(FirstString);
+            while (*FirstString != L'\0' && (*FirstString >= L'0' && *FirstString <= L'9')) {
+                FirstString++;
+            }
+
+            SecondVer = Atoi(SecondString);
+            while (*SecondString != L'\0' && (*SecondString >= L'0' && *SecondString <= L'9')) {
+                SecondString++;
+            }
         }
-        return (*SecondString - *FirstString);
+
+        return SecondVer - FirstVer;
     } else {
         return 0;
     }
-} // INT16 MyStriCmpDiff()
-
+} // INT16 MyStriCmpVersion()
 
 /*++
  * 

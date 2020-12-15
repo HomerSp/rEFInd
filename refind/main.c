@@ -1256,7 +1256,8 @@ static struct LOADER_LIST * AddLoaderListEntry(struct LOADER_LIST *LoaderList, s
         if (StriSubCmp(L"vmlinuz-0-rescue", NewEntry->FileName))
             LinuxRescue = TRUE;
         while ((CurrentEntry != NULL) && !StriSubCmp(L"vmlinuz-0-rescue", CurrentEntry->FileName) &&
-               (LinuxRescue || ((GlobalConfig.SortLinuxKernelsByName && MyStriCmpDiff(Basename(NewEntry->FileName), Basename(CurrentEntry->FileName)) > 0) ||
+               (LinuxRescue ||
+                ((GlobalConfig.SortLinuxKernelsByName && MyStriCmpVersion(Basename(NewEntry->FileName), Basename(CurrentEntry->FileName)) > 0) ||
                 (!GlobalConfig.SortLinuxKernelsByName && TimeComp(&(NewEntry->TimeStamp), &(CurrentEntry->TimeStamp)) < 0)
                 ))) {
             PrevEntry = CurrentEntry;

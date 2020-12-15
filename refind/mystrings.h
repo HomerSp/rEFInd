@@ -41,7 +41,7 @@ typedef struct _string_list {
 
 BOOLEAN StriSubCmp(IN CHAR16 *TargetStr, IN CHAR16 *BigStr);
 BOOLEAN MyStriCmp(IN CONST CHAR16 *String1, IN CONST CHAR16 *String2);
-INT16 MyStriCmpDiff(IN CONST CHAR16 *FirstString, IN CONST CHAR16 *SecondString);
+INT16 MyStriCmpVersion(IN CONST CHAR16 *FirstString, IN CONST CHAR16 *SecondString);
 CHAR16* MyStrStr (IN CHAR16  *String, IN CHAR16  *StrCharSet);
 VOID ToLower(CHAR16 * MyString);
 VOID MergeStrings(IN OUT CHAR16 **First, IN CHAR16 *Second, CHAR16 AddChar);
